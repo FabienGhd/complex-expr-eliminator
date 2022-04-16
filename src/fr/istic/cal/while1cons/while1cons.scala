@@ -3,9 +3,9 @@ package fr.istic.cal.while1cons
 /*
  * VEUILLEZ INSCRIRE CI-DESSOUS VOTRE NOM ET VOTRE PRENOM :
  * 
- * ETUDIANT 1 :
+ * ETUDIANT 1 : GUIHARD Fabien
  * 
- * ETUDIANT 2 :
+ * ETUDIANT 2 : HOMERY Axel
  * 
  */
 
@@ -40,7 +40,14 @@ object While1cons {
    * que l'expression et de la variable qui contient le résultat
    */
   // TODO TP4
-  def while1ConsExprV(expression: Expression): (List[Command], Variable) = ???
+  def while1ConsExprV(expression: Expression): (List[Command], Variable) = {
+    expression match {
+      case Nl => {val res: Variable = NewVar.make(); (List(Set(res, Nl)), res)}
+      case VarExp(x) => {(Nil, Var(x))}
+      case Cst(x) => {val res: Variable = NewVar.make(); (List(Set(res, Cst(x))), res)}
+    }
+    
+  }
 
   /**
    * @param expression : un AST décrivant une expression du langage WHILE
