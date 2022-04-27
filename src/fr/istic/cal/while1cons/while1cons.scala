@@ -42,11 +42,31 @@ object While1cons {
   // TODO TP4
   def while1ConsExprV(expression: Expression): (List[Command], Variable) = {
     expression match {
+      
       case Nl => {val res: Variable = NewVar.make(); (List(Set(res, Nl)), res)}
+      
       case VarExp(x) => {(Nil, Var(x))}
+      
       case Cst(x) => {val res: Variable = NewVar.make(); (List(Set(res, Cst(x))), res)}
+      
+      case Hd(e) => {var (list, v): (List[Command], Variable) = while1ConsExprV(e)
+        (list,v) match {
+            case(_,Var(x)) => {val y: Variable = NewVar.make();
+              (list ++ List(Set(y, Hd(VarExp(x)))), y)
+        }
+      }
+      }
+      
+      case Tl(e) =>{var (list, v): (List[Command], Variable) = while1ConsExprV(e)
+        (list,v) match {
+            case(_,Var(x)) => {val y: Variable = NewVar.make();
+              (list ++ List(Set(y, Tl(VarExp(x)))), y)
+        }
+      }
+      }
+      
     }
-    
+    //TODO: 'Eq' and 'Cons'
   }
 
   /**
@@ -55,7 +75,28 @@ object While1cons {
    * qui, combinées, ont le même effet que l'expression initiale
    */
   // TODO TP4
-  def while1ConsExprSE(expression: Expression): (List[Command], Expression) = ???
+  def while1ConsExprSE(expression: Expression): (List[Command], Expression) = {
+    expression match {
+      case Nl => (Nil, Nl)
+      
+      case VarExp(x) => {(List(), VarExp(x))} 
+      
+      case Cst(x) => (List(), Cst(x))
+      
+      case Hd(e) => {val (list, v) = while1ConsExprV(e);
+        v match {
+           case Var(s) => (list, Hd(VarExp(s)))
+        }
+      }
+      
+      case Tl(e) => {val (list, v) = while1ConsExprV(e);
+        v match {
+           case Var(s) => (list, Tl(VarExp(s)))
+        }
+      }
+      
+    }
+  }
 
   /**
    *
