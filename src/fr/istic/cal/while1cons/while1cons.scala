@@ -148,7 +148,6 @@ object While1cons {
    * @return une liste de commandes ayant un seul constructeur par expression
    * et ayant le même effet que la commande initiale
    */
-  // TODO TP4
   def while1ConsCommand(command: Command): List[Command] = {
     command match {
       case Nop => List(Nop)
@@ -184,7 +183,6 @@ object While1cons {
    * @return une liste de commandes ayant un seul constructeur par expression
    * et ayant le même effet que les commandes initiales
    */
-  // TODO TP4
   def while1ConsCommands(commands: List[Command]): List[Command] = {
      commands match {
       
@@ -212,8 +210,17 @@ object While1cons {
    * @return un AST décrivant un programme du langage WHILE 
    * de même sémantique que le programme initial mais ne contenant que des expressions simples
    */
-  // TODO TP4
-  def while1ConsProgr(program: Program): Program = ???
+  def while1ConsProgr(program: Program): Program = {
+    program match {
+      case Progr(in, body, out) => {
+        (in, out) match {
+          case (Nil, _) => throw ExceptionListeVide
+          case (_, Nil) => throw ExceptionListeVide
+          case _ => Progr(in, while1ConsCommands(body), out)
+        }
+      }
+    }
+  }
 
   def main(args: Array[String]): Unit = {
     
