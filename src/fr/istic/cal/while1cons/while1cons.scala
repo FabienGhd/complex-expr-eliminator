@@ -39,34 +39,59 @@ object While1cons {
    * @return une paire constituée d'une liste d'affectations ayant le même effet
    * que l'expression et de la variable qui contient le résultat
    */
-  // TODO TP4
   def while1ConsExprV(expression: Expression): (List[Command], Variable) = {
     expression match {
       
-      case Nl => {val res: Variable = NewVar.make(); (List(Set(res, Nl)), res)}
-      
-      case VarExp(x) => {(Nil, Var(x))}
-      
-      case Cst(x) => {val res: Variable = NewVar.make(); (List(Set(res, Cst(x))), res)}
-      
-      case Hd(e) => {var (list, v): (List[Command], Variable) = while1ConsExprV(e)
-        (list,v) match {
-            case(_,Var(x)) => {val y: Variable = NewVar.make();
-              (list ++ List(Set(y, Hd(VarExp(x)))), y)
+      case Nl        => { val res: Variable = NewVar.make(); (List(Set(res, Nl)), res) }
+
+      case VarExp(x) => { (Nil, Var(x)) }
+
+      case Cst(x)    => { val res: Variable = NewVar.make(); (List(Set(res, Cst(x))), res) }
+
+      case Hd(e) => {
+        var (list, v): (List[Command], Variable) = while1ConsExprV(e)
+        (list, v) match {
+          case (_, Var(x)) => {
+            val y: Variable = NewVar.make();
+            (list ++ List(Set(y, Hd(VarExp(x)))), y)
+          }
         }
       }
-      }
-      
-      case Tl(e) =>{var (list, v): (List[Command], Variable) = while1ConsExprV(e)
-        (list,v) match {
-            case(_,Var(x)) => {val y: Variable = NewVar.make();
-              (list ++ List(Set(y, Tl(VarExp(x)))), y)
+
+      case Tl(e) => {
+        var (list, v): (List[Command], Variable) = while1ConsExprV(e)
+        (list, v) match {
+          case (_, Var(x)) => {
+            val new_var: Variable = NewVar.make();
+            (list ++ List(Set(new_var, Tl(VarExp(x)))), new_var)
+          }
         }
       }
+
+      case Eq(e1, e2) => {
+        var (list1, v1): (List[Command], Variable) = while1ConsExprV(e1)
+        var (list2, v2): (List[Command], Variable) = while1ConsExprV(e2)
+        (list1, list2, v1, v2) match {
+          case (_, _, Var(x1), Var(x2)) => {
+            val new_var: Variable = NewVar.make();
+            val last_com: List[Command] = List(Set(new_var, Eq(VarExp(x1), VarExp(x2))));
+            (list1 ++ list2 ++ last_com, new_var)
+          }
+        }
       }
-      
+
+      case Cons(e1, e2) => {
+        var (list1, v1): (List[Command], Variable) = while1ConsExprV(e1)
+        var (list2, v2): (List[Command], Variable) = while1ConsExprV(e2)
+        (list1, list2, v1, v2) match {
+          case (_, _, Var(x1), Var(x2)) => {
+            val new_var: Variable = NewVar.make();
+            val last_com: List[Command] = List(Set(new_var, Cons(VarExp(x1), VarExp(x2))));
+            (list1 ++ list2 ++ last_com, new_var)
+          }
+        }
+      }
     }
-    //TODO: 'Eq' and 'Cons'
   }
 
   /**
@@ -74,27 +99,43 @@ object While1cons {
    * @return une paire constituée d'une liste d'affectations et une expression simple
    * qui, combinées, ont le même effet que l'expression initiale
    */
-  // TODO TP4
   def while1ConsExprSE(expression: Expression): (List[Command], Expression) = {
     expression match {
-      case Nl => (Nil, Nl)
-      
-      case VarExp(x) => {(List(), VarExp(x))} 
-      
-      case Cst(x) => (List(), Cst(x))
-      
-      case Hd(e) => {val (list, v) = while1ConsExprV(e);
+      case Nl        => (Nil, Nl)
+
+      case VarExp(x) => { (List(), VarExp(x)) }
+
+      case Cst(x)    => (List(), Cst(x))
+
+      case Hd(e) => {
+        val (coms, v) = while1ConsExprV(e);
         v match {
-           case Var(s) => (list, Hd(VarExp(s)))
+          case Var(s) => (coms, Hd(VarExp(s)))
         }
       }
-      
-      case Tl(e) => {val (list, v) = while1ConsExprV(e);
+
+      case Tl(e) => {
+        val (coms, v) = while1ConsExprV(e);
         v match {
-           case Var(s) => (list, Tl(VarExp(s)))
+          case Var(s) => (coms, Tl(VarExp(s)))
         }
       }
-      
+
+      case Eq(e1, e2) => {
+        val (coms1, v1) = while1ConsExprV(e1);
+        val (coms2, v2) = while1ConsExprV(e2);
+        (v1, v2) match {
+          case (Var(x1), Var(x2)) => (coms1 ++ coms2, Eq(VarExp(x1), VarExp(x2)))
+        }
+      }
+
+      case Cons(e1, e2) => {
+        val (coms1, v1) = while1ConsExprV(e1);
+        val (coms2, v2) = while1ConsExprV(e2);
+        (v1, v2) match {
+          case (Var(x1), Var(x2)) => (coms1 ++ coms2, Cons(VarExp(x1), VarExp(x2)))
+        }
+      }
     }
   }
 
@@ -108,7 +149,39 @@ object While1cons {
    * et ayant le même effet que la commande initiale
    */
   // TODO TP4
-  def while1ConsCommand(command: Command): List[Command] = ???
+  def while1ConsCommand(command: Command): List[Command] = {
+    command match {
+      case Nop => List(Nop)
+      case Set(v, e) => {
+        val cons_expr = while1ConsExprSE(e) // On réduit l'expression
+        cons_expr match {
+          case (coms, expr) => coms ++ List(Set(v, expr)) // On renvoit la liste des commandes à effectuer + la commande finale
+        }
+      }
+      case While(cond, body)              => { // TODO : 1 test ne passe pas
+        val cons_expr = while1ConsExprSE(cond)
+        val cons_coms = while1ConsCommands(body)
+        (cons_expr) match {
+          case (expr_coms, expr_e) => expr_coms ++ List(While(expr_e, cons_coms))
+        }
+      }
+      case For(e, coms)                => { // TODO : 1 test ne passe pas
+        val cons_expr = while1ConsExprSE(e)
+        val cons_coms = while1ConsCommands(coms)
+        (cons_expr) match {
+          case (expr_coms, expr_e) => expr_coms ++ List(For(expr_e, cons_coms))
+        }
+      }
+      case If(e, then_coms, else_coms) => { // TODO : 1 test ne passe pas
+        val cons_expr = while1ConsExprSE(e)
+        val cons_then_coms = while1ConsCommands(then_coms)
+        val cons_else_coms = while1ConsCommands(else_coms)
+        (cons_expr) match {
+          case (expr_coms, expr_e) => expr_coms ++ List(If(expr_e, cons_then_coms, cons_else_coms))
+        }
+      }
+    }
+  }
 
   /**
    * @param commands : une liste non vide d'AST décrivant une liste non vide de commandes du langage WHILE
@@ -116,7 +189,20 @@ object While1cons {
    * et ayant le même effet que les commandes initiales
    */
   // TODO TP4
-  def while1ConsCommands(commands: List[Command]): List[Command] = ???
+  def while1ConsCommands(commands: List[Command]): List[Command] = {
+     commands match {
+      case Nop :: Nil                         => List(Nop)
+      case Nop :: end                         => List(Nop) ++ while1ConsCommands(end)
+      case Set(v, e) :: Nil                   => while1ConsCommand(Set(v, e))
+      case Set(v, e) :: end                   => while1ConsCommand(Set(v, e)) ++ while1ConsCommands(end)
+      case While(e, coms) :: Nil              => while1ConsCommand(While(e, coms))
+      case While(e, coms) :: end              => while1ConsCommand(While(e, coms)) ++ while1ConsCommands(end)
+      case For(e, coms) :: Nil                => while1ConsCommand(For(e, coms))
+      case For(e, coms) :: end                => while1ConsCommand(For(e, coms)) ++ while1ConsCommands(end)
+      case If(e, then_coms, else_coms) :: Nil => while1ConsCommand(If(e, then_coms, else_coms))
+      case If(e, then_coms, else_coms) :: end => while1ConsCommand(If(e, then_coms, else_coms)) ++ while1ConsCommands(end)
+    }
+  }
 
   /**
    *
