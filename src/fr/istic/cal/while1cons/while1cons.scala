@@ -158,26 +158,22 @@ object While1cons {
           case (coms, expr) => coms ++ List(Set(v, expr)) // On renvoit la liste des commandes à effectuer + la commande finale
         }
       }
-      case While(cond, body)              => { // TODO : 1 test ne passe pas
-        val cons_expr = while1ConsExprSE(cond)
-        val cons_coms = while1ConsCommands(body)
-        (cons_expr) match {
-          case (expr_coms, expr_e) => expr_coms ++ List(While(expr_e, cons_coms))
+      case While(cond, body) => {
+        val cons_expr = while1ConsExprV(cond)
+        cons_expr._2 match {
+          case Var(s) => cons_expr._1 ++ List(While(VarExp(s), while1ConsCommands(body) ++ cons_expr._1))
         }
       }
-      case For(e, coms)                => { // TODO : 1 test ne passe pas
-        val cons_expr = while1ConsExprSE(e)
-        val cons_coms = while1ConsCommands(coms)
-        (cons_expr) match {
-          case (expr_coms, expr_e) => expr_coms ++ List(For(expr_e, cons_coms))
+      case For(e, body) => {
+        val cons_expr = while1ConsExprV(e)
+        cons_expr._2 match {
+          case Var(s) => cons_expr._1 ++ List(For(VarExp(s), while1ConsCommands(body)))
         }
       }
-      case If(e, then_coms, else_coms) => { // TODO : 1 test ne passe pas
-        val cons_expr = while1ConsExprSE(e)
-        val cons_then_coms = while1ConsCommands(then_coms)
-        val cons_else_coms = while1ConsCommands(else_coms)
-        (cons_expr) match {
-          case (expr_coms, expr_e) => expr_coms ++ List(If(expr_e, cons_then_coms, cons_else_coms))
+      case If(e, then_coms, else_coms) => {
+        val cons_expr = while1ConsExprV(e)
+        cons_expr._2 match {
+          case Var(s) => cons_expr._1 ++ List(If(VarExp(s), while1ConsCommands(then_coms), while1ConsCommands(else_coms)))
         }
       }
     }
@@ -191,6 +187,8 @@ object While1cons {
   // TODO TP4
   def while1ConsCommands(commands: List[Command]): List[Command] = {
      commands match {
+      
+      case Nil                                => throw ExceptionListeVide
       case Nop :: Nil                         => List(Nop)
       case Nop :: end                         => List(Nop) ++ while1ConsCommands(end)
       case Set(v, e) :: Nil                   => while1ConsCommand(Set(v, e))
